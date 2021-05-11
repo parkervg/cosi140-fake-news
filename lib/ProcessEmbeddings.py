@@ -13,7 +13,17 @@ import copy
 import numpy as np
 from sklearn.decomposition import PCA
 from sklearn import preprocessing
-from typing import Iterable, Dict, Any, Tuple, List, Sequence, Generator, Callable, Union
+from typing import (
+    Iterable,
+    Dict,
+    Any,
+    Tuple,
+    List,
+    Sequence,
+    Generator,
+    Callable,
+    Union,
+)
 from tools.Blogger import Blogger
 from gensim.models.keyedvectors import KeyedVectors
 import shap
@@ -51,7 +61,9 @@ TODO:
 
 
 class WordEmbeddings:
-    def __init__(self, vector_file: str, word2vec: bool = False, normalize_on_load: bool = False):
+    def __init__(
+        self, vector_file: str, word2vec: bool = False, normalize_on_load: bool = False
+    ):
         self.vector_file = vector_file if vector_file else "./vectors/glove.6B.300d.txt"
         # On normalization:
         # Levy et. al. 2015
@@ -95,7 +107,9 @@ class WordEmbeddings:
                 self.ordered_vocab.append(word)
                 self.vectors.append(np.fromstring(vec, sep=" "))
                 if self.normalize_on_load:
-                    self.vectors[-1] /= math.sqrt((self.vectors[-1] ** 2).sum() + EPSILON)
+                    self.vectors[-1] /= math.sqrt(
+                        (self.vectors[-1] ** 2).sum() + EPSILON
+                    )
         self.vectors = np.asarray(self.vectors)
         self.original_vectors = copy.deepcopy(self.vectors)
         self.original_dim = self.vectors.shape[1]
@@ -125,7 +139,9 @@ class WordEmbeddings:
         """
         self.function_log.append("remove_top_components")
         if self.prev_components.size == 0:
-            raise ValueError("No value found for prev_components. Did you call pca_fit_transform?")
+            raise ValueError(
+                "No value found for prev_components. Did you call pca_fit_transform?"
+            )
         z = []
         for ix, x in enumerate(self.vectors):
             for u in self.prev_components[0:k]:
@@ -167,7 +183,9 @@ class WordEmbeddings:
         """
         Used for testing purposes. Takes random selection from all of embedding dimensions
         """
-        dims = random.sample([i for i in range(self.vectors.shape[1]) if i not in avoid_dims], k=k)
+        dims = random.sample(
+            [i for i in range(self.vectors.shape[1]) if i not in avoid_dims], k=k
+        )
         logger.status_update(f"Randomly selected dimension indices {dims}")
         self.take_dims(dims)
         logger.status_update(f"New shape of vectors is {self.vectors.shape}")
@@ -179,7 +197,9 @@ class WordEmbeddings:
         """
         logger.status_update("Creating train ngrams...")
         ngrammed_text = [self.get_ngrams(sample, n=n) for sample in train_text]
-        return set(tuple(gram) for gram in list(itertools.chain.from_iterable(ngrammed_text)))  # Flatten list of lists
+        return set(
+            tuple(gram) for gram in list(itertools.chain.from_iterable(ngrammed_text))
+        )  # Flatten list of lists
 
     @staticmethod
     def get_ngrams(text: List[str], n: int = 3, unigrams=False) -> List[str]:
@@ -197,7 +217,9 @@ class WordEmbeddings:
             output += [[i] for i in text if i not in output]
         return output
 
-    def top_shap_dimensions(self, task: str, k: int, clf=None, X_train=None) -> List[int]:
+    def top_shap_dimensions(
+        self, task: str, k: int, clf=None, X_train=None
+    ) -> List[int]:
         """
         Averages over absolute shap values for each dimension, returning k top dimensions.
         """
@@ -235,7 +257,10 @@ class WordEmbeddings:
             sorted_values = np.argsort(shap_values.values.mean(0), axis=0)
             class_zero_dims = sorted_values[:k]
             class_one_dims = sorted_values[-k:]
-            self.task_data[task]["class_shaps"] = {0: class_zero_dims, 1: class_one_dims}
+            self.task_data[task]["class_shaps"] = {
+                0: class_zero_dims,
+                1: class_one_dims,
+            }
         else:
             vals = np.sum(shap_values.values, axis=0)
             for label_ind in range(vals.shape[1]):
@@ -261,10 +286,15 @@ class WordEmbeddings:
             self.model_inference(task)
             clf = self.task_data[task]["clf"]
         if clf.coef_.shape[1] != self.original_dim:
-            logger.yellow(f"Classifier not trained on original dimensions, re-training model...")
+            logger.yellow(
+                f"Classifier not trained on original dimensions, re-training model..."
+            )
             self.model_inference(task)
             clf = self.task_data[task]["clf"]
-        if not self.task_data[task]["class_shaps"] or len(list(self.task_data[task]["class_shaps"].values())[0]) != k:
+        if (
+            not self.task_data[task]["class_shaps"]
+            or len(list(self.task_data[task]["class_shaps"].values())[0]) != k
+        ):
             logger.yellow(f"Class shaps not cached for {task}, calculating now...")
             self.shap_by_class(task, k=k)
         # Not saving ngrams to task_data, since they're only used in a pretty unique case
@@ -285,13 +315,17 @@ class WordEmbeddings:
             out["class_label"] = {}
             out["class_label"]["dims"] = shap_dims
             for ngram in ngrams:
-                subspace_scores.append((ngram, self.subspace_score(ngram, shap_dims, vector_dict)))
+                subspace_scores.append(
+                    (ngram, self.subspace_score(ngram, shap_dims, vector_dict))
+                )
             # logger.status_update(f"Top ngrams for class {class_label}:")
             # for x in sorted(subspace_scores, key=lambda x: x[1], reverse=True)[:display_count]:
             #     print(" ".join(x[0]))
             # print()
             out[class_label] = {}
-            out[class_label]["ngrams"] = sorted(subspace_scores, key=lambda x: x[1], reverse=True)
+            out[class_label]["ngrams"] = sorted(
+                subspace_scores, key=lambda x: x[1], reverse=True
+            )
         return out
 
     def analyze_sentence(self, task, text, stopwords=[], ngram_size=3, k=50):
@@ -305,12 +339,17 @@ class WordEmbeddings:
             self.model_inference(task)
             clf = self.task_data[task]["clf"]
             X_train = self.task_data[task]["X_train"]
-        if not self.task_data[task]["class_shaps"] or len(list(self.task_data[task]["class_shaps"].values())[0]) != k:
+        if (
+            not self.task_data[task]["class_shaps"]
+            or len(list(self.task_data[task]["class_shaps"].values())[0]) != k
+        ):
             logger.yellow(f"Class shaps not cached for {task}, calculating now...")
             self.shap_by_class(task, k=k)
         vector_dict = self.get_vector_dict(original=True, inf_default=True)
         text = [t.lower() for t in nltk.word_tokenize(text)]
-        v = np.reshape(self.get_sentence_vector(text, vector_dict, stopwords=stopwords), (1, -1))
+        v = np.reshape(
+            self.get_sentence_vector(text, vector_dict, stopwords=stopwords), (1, -1)
+        )
 
         class_pred = clf.predict(v)
         logger.status_update(f"Predicted class: {class_pred[0]}")
@@ -328,8 +367,12 @@ class WordEmbeddings:
         ngrams = self.get_ngrams(text, n=ngram_size, unigrams=True)
         out = {0: [], 1: []}
         for gram in ngrams:
-            out[0].append((" ".join(gram), self.subspace_score(gram, neg_class_dims, vector_dict)))
-            out[1].append((" ".join(gram), self.subspace_score(gram, pos_class_dims, vector_dict)))
+            out[0].append(
+                (" ".join(gram), self.subspace_score(gram, neg_class_dims, vector_dict))
+            )
+            out[1].append(
+                (" ".join(gram), self.subspace_score(gram, pos_class_dims, vector_dict))
+            )
         out[0] = sorted(out[0], key=lambda x: x[1], reverse=True)[:10]
         out[1] = sorted(out[1], key=lambda x: x[1], reverse=True)[:10]
         out["pred"] = class_pred[0]
@@ -338,7 +381,10 @@ class WordEmbeddings:
 
     @staticmethod
     def get_sentence_vector(
-        sent: List[str], vector_dict: Dict[str, np.ndarray], stopwords: List[str] = [], weights: List[float] = None
+        sent: List[str],
+        vector_dict: Dict[str, np.ndarray],
+        stopwords: List[str] = [],
+        weights: List[float] = None,
     ) -> np.ndarray:
         """
         Converts a list of strings to a vector using the provided vector_dict.
@@ -360,7 +406,12 @@ class WordEmbeddings:
         v = np.mean(v, 0)
         return v
 
-    def subspace_score(self, text: Union[str, list], dims: List[int], vector_dict: Dict[str, np.ndarray]) -> float:
+    def subspace_score(
+        self,
+        text: Union[str, list],
+        dims: List[int],
+        vector_dict: Dict[str, np.ndarray],
+    ) -> float:
         """
         As defined in Jang et al.
         Lowercases all words and returns subspace score.
@@ -407,7 +458,9 @@ class WordEmbeddings:
         # Assign to task_data
         self.task_data[task]["clf"] = results["classifier"]
         self.task_data[task]["X_train"] = results["X_train"]
-        self.task_data[task]["train_text"] = results["text"][: results["X_train"].shape[0]]
+        self.task_data[task]["train_text"] = results["text"][
+            : results["X_train"].shape[0]
+        ]
         return results["acc"]
 
     def reset(self):
@@ -426,7 +479,9 @@ class WordEmbeddings:
     ############################################################################
     ####################### EVALUATION FUNCTIONS ###############################
     ############################################################################
-    def get_vector_dict(self, original: bool = False, inf_default=False) -> Dict[str, np.ndarray]:
+    def get_vector_dict(
+        self, original: bool = False, inf_default=False
+    ) -> Dict[str, np.ndarray]:
         """
         Returns defaultdict of structure {word:vector}.
         Default is -inf for missing words.
@@ -598,24 +653,44 @@ class WordEmbeddings:
         self.summary["process"] = self.function_log
         self.summary["original_vectors"] = os.path.basename(self.vector_file)
         if save_summary:
-            summary_file_name = summary_file_name if summary_file_name else str(uuid.uuid4())
-            self.save_summary_json(summary_file_name, overwrite_task=overwrite_task, overwrite_file=overwrite_file)
+            summary_file_name = (
+                summary_file_name if summary_file_name else str(uuid.uuid4())
+            )
+            self.save_summary_json(
+                summary_file_name,
+                overwrite_task=overwrite_task,
+                overwrite_file=overwrite_file,
+            )
 
-    def run_senteval(self, tasks, save_summary=False, summary_file_name=None, senteval_config={}):
+    def run_senteval(
+        self, tasks, save_summary=False, summary_file_name=None, senteval_config={}
+    ):
         if not isinstance(tasks, list):
             tasks = [tasks]
         # Set params for SentEval
         params_senteval = {
             "task_path": PATH_TO_DATA,
-            "usepytorch": senteval_config.get("usepytorch") if senteval_config.get("usepytorch") else False,
-            "kfold": senteval_config.get("kfold") if senteval_config.get("kfold") else 5,
+            "usepytorch": senteval_config.get("usepytorch")
+            if senteval_config.get("usepytorch")
+            else False,
+            "kfold": senteval_config.get("kfold")
+            if senteval_config.get("kfold")
+            else 5,
         }
         params_senteval["classifier"] = {
             "nhid": senteval_config.get("nhid") if senteval_config.get("nhid") else 0,
-            "optim": senteval_config.get("optim") if senteval_config.get("optim") else "rmsprop",
-            "batch_size": senteval_config.get("batch_size") if senteval_config.get("batch_size") else 128,
-            "tenacity": senteval_config.get("tenacity") if senteval_config.get("tenacity") else 3,
-            "epoch_size": senteval_config.get("epoch_size") if senteval_config.get("epoch_size") else 2,
+            "optim": senteval_config.get("optim")
+            if senteval_config.get("optim")
+            else "rmsprop",
+            "batch_size": senteval_config.get("batch_size")
+            if senteval_config.get("batch_size")
+            else 128,
+            "tenacity": senteval_config.get("tenacity")
+            if senteval_config.get("tenacity")
+            else 3,
+            "epoch_size": senteval_config.get("epoch_size")
+            if senteval_config.get("epoch_size")
+            else 2,
         }
         print(params_senteval["classifier"])
         print(params_senteval)
@@ -630,11 +705,15 @@ class WordEmbeddings:
                 print()
             elif k in SIMILARITY_TASKS:
                 self.summary["similarity_scores"][k] = results[k]
-                logger.status_update("{}: {}".format(k, results[k]["all"]["spearman"]["mean"]))
+                logger.status_update(
+                    "{}: {}".format(k, results[k]["all"]["spearman"]["mean"])
+                )
                 print()
         return results
 
-    def save_summary_json(self, summary_file_name: str, overwrite_file: bool, overwrite_task: bool):
+    def save_summary_json(
+        self, summary_file_name: str, overwrite_file: bool, overwrite_task: bool
+    ):
         """
         Writes to summary json. If overwrite=True, replaces the existing file with the new one.
         """
@@ -650,9 +729,13 @@ class WordEmbeddings:
                 with open("summary/{}".format(summary_file_name)) as f:
                     existing_data = json.load(f)
                 existing_data = self.append_to_output(
-                    existing_data, "classification_scores", overwrite_task=overwrite_task
+                    existing_data,
+                    "classification_scores",
+                    overwrite_task=overwrite_task,
                 )
-                existing_data = self.append_to_output(existing_data, "similarity_scores", overwrite_task=overwrite_task)
+                existing_data = self.append_to_output(
+                    existing_data, "similarity_scores", overwrite_task=overwrite_task
+                )
                 with open("summary/{}".format(summary_file_name), "w") as f:
                     json.dump(existing_data, f)
         else:

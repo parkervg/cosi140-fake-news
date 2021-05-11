@@ -38,7 +38,12 @@ class PaddedTensorDataset(Dataset):
         self.raw_data = raw_data
 
     def __getitem__(self, index):
-        return self.data_tensor[index], self.target_tensor[index], self.length_tensor[index], self.raw_data[index]
+        return (
+            self.data_tensor[index],
+            self.target_tensor[index],
+            self.length_tensor[index],
+            self.raw_data[index],
+        )
 
     def __len__(self):
         return self.data_tensor.size(0)

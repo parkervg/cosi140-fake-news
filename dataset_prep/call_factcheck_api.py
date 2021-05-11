@@ -3,7 +3,9 @@ import requests
 import json
 from secrets import API_KEY
 
-BASE_URL = "https://factchecktools.googleapis.com/v1alpha1/claims:search?languageCode=en"
+BASE_URL = (
+    "https://factchecktools.googleapis.com/v1alpha1/claims:search?languageCode=en"
+)
 liar_test_df = pd.read_csv("LIAR/test.tsv", sep="\t", header=None)
 liar_train_df = pd.read_csv("LIAR/train.tsv", sep="\t", header=None)
 

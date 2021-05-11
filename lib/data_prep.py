@@ -52,7 +52,9 @@ def read_split_data():
                 raw_y.append(correct_class)
                 raw_X.append(clean_text(annotation_data[datapoint]["summary"]))
                 datapoint_ids.append(int(datapoint))
-    print(f"{len([i for i in raw_y if len(i) > 1])} out of {len(raw_y)} are multilabel.")
+    print(
+        f"{len([i for i in raw_y if len(i) > 1])} out of {len(raw_y)} are multilabel."
+    )
 
     # Converting to word embeddings, encoding labels
     label_to_ix = {c: ix for ix, c in enumerate(predict_labels)}
@@ -62,7 +64,13 @@ def read_split_data():
 
 
 def vectorize(data, tok2id, unk_id=0):
-    return [[tok2id[tok] if tok in tok2id else unk_id for tok in tokenized_sentence(sentence)] for sentence, _ in data]
+    return [
+        [
+            tok2id[tok] if tok in tok2id else unk_id
+            for tok in tokenized_sentence(sentence)
+        ]
+        for sentence, _ in data
+    ]
 
 
 def pad_sequences(vectorized_seqs, seq_lengths):
@@ -102,7 +110,11 @@ def get_vocab(data):
     for sentence, _ in data:
         for tok in tokenized_sentence(sentence):
             vocab.add(tok)
-    return vocab, {ix: tok for ix, tok in enumerate(vocab)}, {tok: ix for ix, tok in enumerate(vocab)}
+    return (
+        vocab,
+        {ix: tok for ix, tok in enumerate(vocab)},
+        {tok: ix for ix, tok in enumerate(vocab)},
+    )
 
 
 def create_dataset(data, id2tok, tok2id, target_label, batch_size=4):
@@ -114,7 +126,10 @@ def create_dataset(data, id2tok, tok2id, target_label, batch_size=4):
     target_tensor = torch.LongTensor([target_label in y for _, y in data])
     raw_data = [x for x, _ in data]
     print(batch_size)
-    return DataLoader(PaddedTensorDataset(seq_tensor, target_tensor, seq_lengths, raw_data), batch_size=batch_size)
+    return DataLoader(
+        PaddedTensorDataset(seq_tensor, target_tensor, seq_lengths, raw_data),
+        batch_size=batch_size,
+    )
 
 
 def get_tok2id(data):

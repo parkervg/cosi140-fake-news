@@ -23,11 +23,17 @@ new_annotation_data = {}
 ix = 0
 for k, v in annotation_data.items():
     if v["claim"] in train_api_data:
-        if train_api_data[v["claim"]]["claims"][0]["claimReview"][0]["textualRating"] != "True":
+        if (
+            train_api_data[v["claim"]]["claims"][0]["claimReview"][0]["textualRating"]
+            != "True"
+        ):
             new_annotation_data[k] = v
             ix += 1
     if v["claim"] in test_api_data:
-        if test_api_data[v["claim"]]["claims"][0]["claimReview"][0]["textualRating"] != "True":
+        if (
+            test_api_data[v["claim"]]["claims"][0]["claimReview"][0]["textualRating"]
+            != "True"
+        ):
             new_annotation_data[k] = v
             ix += 1
 

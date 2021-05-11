@@ -31,7 +31,9 @@ WE = WordEmbeddings(vector_file="embeds/glove.6B/glove.6B.300d.txt")
 
 
 def predict(clf, text):
-    return clf.predict(WE.get_sentence_vector(text.lower().split(), vector_dict).reshape(1, -1))[0]
+    return clf.predict(
+        WE.get_sentence_vector(text.lower().split(), vector_dict).reshape(1, -1)
+    )[0]
 
 
 raw_X = raw_X_test + raw_X_train
@@ -85,23 +87,31 @@ y_train, y_val = to_one_hot(raw_y_train, LABELS), to_one_hot(raw_y_val, LABELS)
 vector_dict = WE.get_vector_dict()
 
 X_train_embeds, X_val_embeds = [
-    WE.get_sentence_vector(tokenized_sentence(x), vector_dict, stopwords=STOPWORDS) for x in raw_X_train
-], [WE.get_sentence_vector(tokenized_sentence(x), vector_dict, stopwords=STOPWORDS) for x in raw_X_val]
+    WE.get_sentence_vector(tokenized_sentence(x), vector_dict, stopwords=STOPWORDS)
+    for x in raw_X_train
+], [
+    WE.get_sentence_vector(tokenized_sentence(x), vector_dict, stopwords=STOPWORDS)
+    for x in raw_X_val
+]
 
 
 lr_embed_clf = MultiOutputClassifier(
-    LogisticRegression(max_iter=300, multi_class="multinomial", penalty="none", solver="lbfgs")
+    LogisticRegression(
+        max_iter=300, multi_class="multinomial", penalty="none", solver="lbfgs"
+    )
 ).fit(X_train_embeds, y_train)
 print(hamming_loss(y_val, lr_embed_clf.predict(X_val_embeds)))
 print(classification_report(y_val, lr_embed_clf.predict(X_val_embeds)))
 ## Seeing where no prediction was made
-null_predictions = len([i for i in lr_embed_clf.predict(X_val_embeds) if not np.any(np.nonzero(i))])
+null_predictions = len(
+    [i for i in lr_embed_clf.predict(X_val_embeds) if not np.any(np.nonzero(i))]
+)
 print(f"{null_predictions} out of {len(y_val)} predictions were null.")
 
 dub_ref_model = lr_embed_clf.estimators_[4]
 vocab, id2tok, tok2id = get_vocab(train_dataset)
-target_label="dubious reference"
-BATCH_SIZE=1
+target_label = "dubious reference"
+BATCH_SIZE = 1
 pred = []
 actual = []
 vectors = []
@@ -113,6 +123,7 @@ for batch, targets, lengths, raw_data in create_dataset(
     vectors.append(WE.get_sentence_vector(raw_data[0].lower().split(), vector_dict))
 print(classification_report(actual, pred))
 plot_confusion_matrix(dub_ref_model, vectors, actual)
+
 
 def analyze_sentence(label_ix, sent, stopwords):
     # Explaining with SHAP
@@ -133,7 +144,9 @@ def explain_with_shap(label_ix, k=10):
     WE.task_data["fake_news"]["train_text"] = [x.lower().split() for x in raw_X_train]
     WE.task_data["fake_news"]["X_train"] = np.array(X_train_embeds)
     WE.task_data["fake_news"]["clf"] = lr_embed_clf.estimators_[label_ix]
-    out = WE.top_ngrams_per_class(task="fake_news", clf=lr_embed_clf.estimators_[label_ix])
+    out = WE.top_ngrams_per_class(
+        task="fake_news", clf=lr_embed_clf.estimators_[label_ix]
+    )
     for class_ix, data in out.items():
         if class_ix == 1:
             print(f"Top words for {IX_TO_LABEL[class_ix]}:")
@@ -146,7 +159,9 @@ def explain_with_shap(label_ix, k=10):
 datapoint = [ix for ix, x in enumerate(raw_y_train) if x == ["quantitative data"]][25]
 raw_y_train[datapoint]
 sent = raw_X_train[datapoint]
-analyze_sentence(LABEL_TO_IX[raw_y_train[datapoint][0]], raw_X_train[datapoint], stopwords=STOPWORDS)
+analyze_sentence(
+    LABEL_TO_IX[raw_y_train[datapoint][0]], raw_X_train[datapoint], stopwords=STOPWORDS
+)
 
 
 """
@@ -156,14 +171,20 @@ F1: 0.29
 """
 vectorizer = CountVectorizer(stop_words=STOPWORDS)
 vectorizer = vectorizer.fit(raw_X)
-X_train_count, X_val_count = vectorizer.transform(raw_X_train), vectorizer.transform(raw_X_val)
+X_train_count, X_val_count = vectorizer.transform(raw_X_train), vectorizer.transform(
+    raw_X_val
+)
 lr_count_clf = MultiOutputClassifier(
-    LogisticRegression(max_iter=200, multi_class="multinomial", penalty="none", solver="lbfgs")
+    LogisticRegression(
+        max_iter=200, multi_class="multinomial", penalty="none", solver="lbfgs"
+    )
 ).fit(X_train_count, y_train)
 print(hamming_loss(y_val, lr_count_clf.predict(X_val_count)))
 print(classification_report(y_val, lr_count_clf.predict(X_val_count)))
 ## Seeing where no prediction was made
-null_predictions = len([i for i in lr_count_clf.predict(X_val_count) if not np.any(np.nonzero(i))])
+null_predictions = len(
+    [i for i in lr_count_clf.predict(X_val_count) if not np.any(np.nonzero(i))]
+)
 print(f"{null_predictions} out of {len(y_val)} predictions were null.")
 
 """
@@ -179,17 +200,23 @@ print(classification_report(y_val, mnb_count_clf.predict(X_test_count)))
 def label_breakdown(label_ix, k=10):
     print(IX_TO_LABEL[label_ix])
     print()
-    top_indices = np.argsort(-mnb_count_clf.estimators_[label_ix].feature_log_prob_, axis=1)[:, :100]
+    top_indices = np.argsort(
+        -mnb_count_clf.estimators_[label_ix].feature_log_prob_, axis=1
+    )[:, :100]
     counts = Counter(np.ravel(top_indices))
 
     def get_unique(arr):
         return np.array([i for i in arr if counts[i] == 1])[:k]
 
-    top_indices = np.array([get_unique(top_indices[row, :]) for row in range(top_indices.shape[0])])
+    top_indices = np.array(
+        [get_unique(top_indices[row, :]) for row in range(top_indices.shape[0])]
+    )
     for class_ix in range(top_indices.shape[0]):
         print(f"Most influential words for {class_ix}:")
         for word_ix in top_indices[class_ix]:
             print(vectorizer.get_feature_names()[word_ix])
         print()
         print()
+
+
 label_breakdown(2, k=20)

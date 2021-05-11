@@ -41,9 +41,16 @@ NUM_EPOCHS = 20
 THRESHOLD = 0.4
 POS_LOSS_WEIGHT = 1.5
 DROPOUT = 0.6
-FEATS_TO_ADD = ["num_count", "year_count"]  # Features added in the add_features function
+FEATS_TO_ADD = [
+    "num_count",
+    "year_count",
+]  # Features added in the add_features function
 FEAT_ADD_SOFTENER = 0.3
-USE_FEATS = [1, 2, 3]  # Labels to apply the added features to (here, quantitative and qualitative data)
+USE_FEATS = [
+    1,
+    2,
+    3,
+]  # Labels to apply the added features to (here, quantitative and qualitative data)
 TFIDF_WEIGHTS = True  # Whether to take into consideration the tfidf matrix in weighing the sentence vectors
 #################################################
 WE = WordEmbeddings(vector_file="embeds/glove.6B/glove.6B.300d.txt")
@@ -87,7 +94,6 @@ class MLPClassifier(nn.Module):
         return output
 
 
-
 def add_features(input_vector, raw_data, FEAT_ADD_SOFTENER=FEAT_ADD_SOFTENER):
     """
     hstacks new feature rows to existing input_vector.
@@ -102,8 +108,13 @@ def add_features(input_vector, raw_data, FEAT_ADD_SOFTENER=FEAT_ADD_SOFTENER):
     # for token in nlp(raw_data):
     #     if token.pos_ == "ADJ":
     #         adj_count += 1
-    all_feats = {"num_count": num_count * FEAT_ADD_SOFTENER, "year_count": year_count * FEAT_ADD_SOFTENER}
-    feats_to_add_vector = torch.FloatTensor([all_feats[i] for i in FEATS_TO_ADD]).unsqueeze(0)
+    all_feats = {
+        "num_count": num_count * FEAT_ADD_SOFTENER,
+        "year_count": year_count * FEAT_ADD_SOFTENER,
+    }
+    feats_to_add_vector = torch.FloatTensor(
+        [all_feats[i] for i in FEATS_TO_ADD]
+    ).unsqueeze(0)
     return torch.hstack((input_vector.unsqueeze(0), feats_to_add_vector)).view(-1)
 
 
@@ -111,7 +122,10 @@ def train():
     results = {}
     vocab, id2tok, tok2id = get_vocab(train_dataset)
     if glob.glob("models/mlp/*"):
-        model_id = max([int(re.search(r"\d+", i).group()) for i in glob.glob("models/mlp/*")]) + 1
+        model_id = (
+            max([int(re.search(r"\d+", i).group()) for i in glob.glob("models/mlp/*")])
+            + 1
+        )
     else:
         model_id = 1
     """
@@ -127,7 +141,9 @@ def train():
             model = MLPClassifier(EMBED_DIM + len(FEATS_TO_ADD), HIDDEN_SIZE, DROPOUT)
         else:
             model = MLPClassifier(EMBED_DIM, HIDDEN_SIZE, DROPOUT)
-        loss_func = nn.BCEWithLogitsLoss(pos_weight=torch.FloatTensor([POS_LOSS_WEIGHT]))
+        loss_func = nn.BCEWithLogitsLoss(
+            pos_weight=torch.FloatTensor([POS_LOSS_WEIGHT])
+        )
         optimizer = optim.Adam(model.parameters(), lr=ALPHA)
         logger.green(f"Building classifier for {label}...")
         model.train()
@@ -144,17 +160,26 @@ def train():
                 tokenized = tokenized_sentence(raw_data[0])
                 sentence_weights = None
                 if TFIDF_WEIGHTS:
-                    sentence_weights = get_tfidf_vals(train_doc_to_tfidf_ix[raw_data[0]])
-                    sentence_weights = [sentence_weights[tok] if tok in sentence_weights else 0 for tok in tokenized]
+                    sentence_weights = get_tfidf_vals(
+                        train_doc_to_tfidf_ix[raw_data[0]]
+                    )
+                    sentence_weights = [
+                        sentence_weights[tok] if tok in sentence_weights else 0
+                        for tok in tokenized
+                    ]
                 input_vector = torch.FloatTensor(
                     WE.get_sentence_vector(
-                        tokenized_sentence(raw_data[0]), vector_dict=vector_dict, weights=sentence_weights
+                        tokenized_sentence(raw_data[0]),
+                        vector_dict=vector_dict,
+                        weights=sentence_weights,
                     )
                 )
                 if LABEL_TO_IX[label] in USE_FEATS:
                     input_vector = add_features(input_vector, raw_data[0])
                 pred = model(input_vector)
-                loss = loss_func(pred.type(torch.FloatTensor), targets.type(torch.FloatTensor))
+                loss = loss_func(
+                    pred.type(torch.FloatTensor), targets.type(torch.FloatTensor)
+                )
                 optimizer.zero_grad()
                 loss.backward()
                 optimizer.step()
@@ -175,12 +200,24 @@ def train():
                 logger.green(f"New best F1 score at {val_f1}")
                 best_f1 = val_f1
                 if not os.path.exists(f"models/mlp/{model_id}/{LABEL_TO_IX[label]}"):
-                    Path(f"models/mlp/{model_id}/{LABEL_TO_IX[label]}").mkdir(parents=True, exist_ok=True)
-                torch.save(model.state_dict(), f"models/mlp/{model_id}/{LABEL_TO_IX[label]}/{LABEL_TO_IX[label]}.pt")
+                    Path(f"models/mlp/{model_id}/{LABEL_TO_IX[label]}").mkdir(
+                        parents=True, exist_ok=True
+                    )
+                torch.save(
+                    model.state_dict(),
+                    f"models/mlp/{model_id}/{LABEL_TO_IX[label]}/{LABEL_TO_IX[label]}.pt",
+                )
                 results[label] = report
-                if os.path.exists(f"models/mlp/{model_id}/{LABEL_TO_IX[label]}/results_{LABEL_TO_IX[label]}.json"):
-                    os.remove(f"models/mlp/{model_id}/{LABEL_TO_IX[label]}/results_{LABEL_TO_IX[label]}.json")
-                with open(f"models/mlp/{model_id}/{LABEL_TO_IX[label]}/results_{LABEL_TO_IX[label]}.json", "w") as f:
+                if os.path.exists(
+                    f"models/mlp/{model_id}/{LABEL_TO_IX[label]}/results_{LABEL_TO_IX[label]}.json"
+                ):
+                    os.remove(
+                        f"models/mlp/{model_id}/{LABEL_TO_IX[label]}/results_{LABEL_TO_IX[label]}.json"
+                    )
+                with open(
+                    f"models/mlp/{model_id}/{LABEL_TO_IX[label]}/results_{LABEL_TO_IX[label]}.json",
+                    "w",
+                ) as f:
                     json.dump(results, f)
         all_best_f1.append(best_f1)
     logger.green(f"Final mean F1: {statistics.mean(all_best_f1)}")
@@ -214,16 +251,22 @@ def mark_best_results():
                 best_score = score
                 best_score_dir = model_dir
     if "*" not in best_score_dir:
-        os.rename(best_score_dir, '/*'.join(os.path.split(best_score_dir)))
+        os.rename(best_score_dir, "/*".join(os.path.split(best_score_dir)))
 
 
-def evaluate_validation_set(model, devset, id2tok, tok2id, label, loss_func, vector_dict, final=False):
+def evaluate_validation_set(
+    model, devset, id2tok, tok2id, label, loss_func, vector_dict, final=False
+):
     y_true = list()
     y_pred = list()
     total_loss = 0
-    for batch, targets, lengths, raw_data in create_dataset(devset, id2tok, tok2id, label, batch_size=1):
+    for batch, targets, lengths, raw_data in create_dataset(
+        devset, id2tok, tok2id, label, batch_size=1
+    ):
         input_vector = torch.FloatTensor(
-            WE.get_sentence_vector(tokenized_sentence(raw_data[0]), vector_dict=vector_dict)
+            WE.get_sentence_vector(
+                tokenized_sentence(raw_data[0]), vector_dict=vector_dict
+            )
         )
         if LABEL_TO_IX[label] in USE_FEATS:
             input_vector = add_features(input_vector, raw_data[0])
@@ -237,7 +280,11 @@ def evaluate_validation_set(model, devset, id2tok, tok2id, label, loss_func, vec
     if final:
         print(classification_report(y_true, y_pred))
         return classification_report(y_true, y_pred, output_dict=True)
-    return total_loss.data.float() / len(devset), acc, classification_report(y_true, y_pred, output_dict=True)
+    return (
+        total_loss.data.float() / len(devset),
+        acc,
+        classification_report(y_true, y_pred, output_dict=True),
+    )
 
 
 if __name__ == "__main__":
