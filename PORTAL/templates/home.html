@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<meta content="text/html;charset=utf-8" http-equiv="Content-Type">
+		<meta content="utf-8" http-equiv="encoding">
+		<link rel="icon" href="{{ url_for('static', filename='icon.jpg') }}">
+		<title>Group 2's Project Annotation Survey</title>
+		<style>
+			.black{color: black; background-color:white;}
+			.white{color: white; background-color:black;}
+			body{
+				font-size: 3vh;
+				font-family:arial, courier, helvetica;
+			}
+			#content{
+			text-align:center;
+				width: 50vw;
+				font-size:2vh;
+				color: #FFFAFA;
+				height:40vh;
+				background-color:#111;
+				border-radius:25px;
+				color: #93E9BE;
+				margin:auto;
+			}
+		</style>
+	</head>
+	
+	<body class = "white">
+		<div id='main' style ='text-align: center'>
+			<H3 class = 'white'> Welcome, Annotator! We will use your initials as your annotator-tag. <br>Please always use the same initials. </H3>
+			<form method = 'post', action="{{ url_for('annotator') }}", name='name' class= 'white'>
+				<label for="name">Enter your Initials:</label>
+				<input type="text" id="name" name="name" autofocus>
+			    <input type="submit" value="Submit">
+			</form>
+		
+		
+		</div>
+		<div id='content'>
+			<h3 style='padding:10%;'>Content Warning: The data that follows is considered fake news, and may contain content that is objectionable. We do not agree with or advocate for the sentiments expressed within. But we believe understanding fake news is important. <br> --The dev team</h3>
+		</div>
+
+		<script>
+
+		</script>
+	</body>
+</html>

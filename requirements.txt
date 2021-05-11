@@ -1,0 +1,14 @@
+scipy==1.4.1
+termcolor==1.1.0
+nltk==3.5
+pandas==1.0.5
+seaborn==0.10.1
+requests==2.24.0
+matplotlib==3.2.2
+spacy==3.0.6
+numpy==1.18.1
+torch==1.8.1
+gensim==4.0.1
+beautifulsoup4==4.9.3
+scikit_learn==0.24.2
+shap==0.39.0

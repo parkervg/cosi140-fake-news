@@ -1,0 +1,171 @@
+﻿<!DOCTYPE html>
+<html>
+	<head>
+		<meta content="text/html;charset=utf-8" http-equiv="Content-Type">
+		<meta content="utf-8" http-equiv="encoding">
+		<link rel="icon" href="{{ url_for('static', filename='icon.jpg') }}">
+		<title>{{ n }}'s annotator page</title>
+		<style>
+			.black{color: black; background-color:white;}
+			.white{color: white; background-color:black; font-family:arial, courier, helvetica;}
+			#sidenav {
+				font-size:1.4vh;
+				height: 98vh;
+				width: 23vw;
+				  position: absolute;
+				  z-index: 1;
+				  top: 0;
+				  left: 0;
+				  background-color: #111;
+				  overflow-x: hidden;
+				  padding: 1vh;
+				  text-align:center;
+				  float:left;
+				  
+				}
+			#main{
+			font-size:0.75vw;
+				height: 99vh;
+				width: 65vw;
+				  position: absolute;
+				  z-index: 1;
+				  top: 0;
+				  left: 25vw;
+				  padding-top: 1vh;
+				  padding-left:5vw;
+				  padding-right:5vw;
+				  text-align:center;
+				  float:left;
+			}
+			#content{
+				padding:1vh;
+				font-size:2vh;
+				color: #FFFAFA;
+				height:40vh;
+				background-color:#111;
+				border-radius:25px;
+				overflow-y: scroll;
+			}
+			.tit{
+				color: #93E9BE;
+				margin-bottom: -1.25vh;
+			}
+			.check{
+				height:2vh;
+				width:2vh;
+			}
+			#interface{
+				border-radius:50px;
+				padding:2vh;
+				background-color:#111;
+			}
+			#goog{color: white; background-color:grey;}
+		</style>
+	</head>
+	
+	<body class= 'white' style='text-align:center;'>
+		<div id="sidenav">
+		  <h3 style='-1.25vh;'><strong>Annotation Guidelines</strong> </h3>
+		  <a href='https://docs.google.com/document/d/1hfExYdU3s5x6JfCru0sDDyb5rKVDT7yUtEljsW1g98E/edit?usp=sharing' id='goog' rel="noopener noreferrer" target="_blank"> 
+			  Click here for the DETAILED guidelines document
+		  </a>
+
+		<p class='tit'>CONTRADICTORY QUOTE</p>
+<p>Definition: A quote, either specific or a general allusion, is used to invalidate the claim.
+<br>
+e.g. “Donald Trump is not against marriage equality” is disproven by referencing a quote where Trump states “I’m opposed to gay marriage.”
+</p>
+		 <p class='tit'>EXAGGERATION</p>
+<p>Definition:The claim is rooted in a valid truth, but as a whole, is untrue.
+<br>
+e.g. “Joe Biden wants to immediately eliminate all fracking” stems from a valid truth (“Joe Biden wants to shift towards clean energy”), but is false due to the statements’ use of superlatives.
+
+</p>
+		 <p class='tit'>QUANTITATIVE DATA</p>
+<p>Definition: The claim is proven to be untrue after referencing a trustworthy source presenting some type of numerical data or other statistics.
+<br>
+e.g. “Only 1,000 Americans have died from COVID-19”, proven false by referencing a CDC report that over 540k Americans have died by COVID.
+</p>
+		  <p class='tit'>LACK OF EVIDENCE/LOGIC</p>
+<p>Definition: The claim has no direct contradiction that is cited, but it is ungrounded in any type of logic or reason. 
+<br> e.g. “Ostriches have learned to speak Russian” is nonsensical, and essentially carries the burden of proof. Without evidence, it is false.
+</p>
+		<p class='tit'>DUBIOUS REFERENCE</p>
+<p>Definition: The claim is based on what appears to be a reputable source at first glance, but upon further examination, the sources’ questionable background has been leveraged, invalidating the claim.
+<br> e.g. “Doctors recommend hydroxychloroquine as a cure for COVID”, referencing the viral group “America’s frontline doctors”, who turned out to be a pretty questionable source of information.. Additionally, this would fall under the category of exaggeration, as the original statement carries the implication that a majority of doctor’s hold this feeling, when in reality it is a small subset.
+</p>
+	<p class='tit'>OUT OF CONTEXT</p>
+<p>Definition: The claim initially appears to be valid but the circumstances in which the claim was originally used has not been reported accurately, distorting its intended interpretation.
+<br>e.g. "The President announced that his recent diplomatic trip to England was uncomfortable and is likely to cut ties with the Queen." 
+The President stated that his trip was uncomfortable when asked about the weather in England, but continues to maintain a strong relationship with English royalty.
+</p>
+<p class='tit'>QUALITATIVE DATA</p>
+<p>Definition: The claim is proven to be untrue after referencing a trustworthy source presenting non-numerical data, including text, video, audio, images, etc.
+<br>e.g. “The senator from Florida was not present at the hearing last Tuesday.” There are official photographs from this event documenting the senator’s presence, as well as written records of his speech.
+</p>
+
+		  <p class='tit'>OTHER CATEGORY</p>
+		  <p>The claim is false for another reason that is not among the options provided. Please provide this reason in the text box.
+			Try to be consistent in naming them if you find that you use terms repeatedly.</p>
+		</div>
+		<div id='main' class='white'>
+			<h2 id='top'> ANNOTATOR {{ n }}, using the Annotation Guidelines on the left, classify the fake news below. <br>You are on datapoint #{{ p }}.</h2>
+			<h4 style='font-size:2vh'>TARGET STATEMENT: "{{ data['claim']}}" </h4><br>
+			<div id='content'>
+				<h4 style = 'padding:1vh'>POLITIFACT'S RULING:<br>{{ data['summary'] | safe}}<br> 
+				<a href='{{ data['verdict_url'] }}' id="politifact" class='white' target="_blank" rel="noopener noreferrer" onclick='snooper()'> LINK TO POLITIFACT </a></h4>
+			</div><br>
+			<div id='interface'>
+				<form method='post' action="{{ url_for('newpage', page_id = p+1, name=n) }}", name='annotate' > 
+				 <p>Your task is to select by your intuition which category best fits <strong>Politifact's reasoning</strong> for labelling this statement fake news. (SELECT MULTIPLE WHERE APPROPRIATE):</p>
+						
+					  <input type="checkbox" id="clickchk" name="annotate" value='click' style="display: none"/> 
+						
+					  <input type="checkbox" id="conquote" name="annotate" value="contradictory quote" class='check'/>
+					  <label for="conquote" class='tit'>Contradictory quote</label><br>
+					  
+					  <input type="checkbox" id="exagg" name="annotate" value="exaggeration" class='check'/>
+					  <label for="exagg" class='tit'>Exaggeration</label><br>
+					  
+					  <input type="checkbox" id="condata" name="annotate" value="quantitative data" class='check'/>
+					  <label for="condata" class='tit'>QUANTITATIVE data</label><br>
+					  
+					  <input type="checkbox" id="evidence" name="annotate" value="evidence lacking" class='check'/>
+					  <label for="evidence" class='tit'>Lack of evidence/Logic</label><br>
+					  
+					  <input type="checkbox" id="dubref" name="annotate" value="dubious reference" class='check'/>
+					  <label for="dubref" class='tit'>Dubious reference</label><br>
+					  
+					  <input type="checkbox" id="ooc" name="annotate" value="out of context" class='check'/>
+					  <label for="ooc" class='tit'>Out of context</label><br>
+					  
+					  <input type="checkbox" id="qualdata" name="annotate" value="qualitative data" class='check'/>
+					  <label for="qualdata" class='tit'>QUALITATIVE data</label><br>
+					  
+					  <input type="checkbox" id="other" name="annotate" value="other" onclick="ShowHideDiv()" class='check'/>
+					  <label for="other" class='tit'>Other</label>
+					  
+					  <div id="dvtext" style="display: none">
+						  <label for="note" class='tit'>Note/Comments:</label>
+						  <input type="text" id="note" name="annotate" autofocus/> <br>
+					  </div>
+						<br> 
+						
+				  <input type="submit" value="Submit" style="display:initial; height:3vh; width:5vw; font-size:1.5vh" onclick="this.style.display='none'">
+				</form>
+			</div>
+		</div>
+		<script>
+		document.getElementById('clickchk').checked = false;
+		function snooper(){
+			document.getElementById('clickchk').checked = true;
+		}
+		function ShowHideDiv() {
+			var chkYes = document.getElementById("other");
+			var dvtext = document.getElementById("dvtext");
+			dvtext.style.display = chkYes.checked ? "block" : "none";
+		}
+
+		</script>
+	</body>
+</html>
