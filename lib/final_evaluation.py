@@ -17,8 +17,9 @@ from lib.data_prep import (
     IX_TO_LABEL,
     tokenized_sentence,
 )
+import os
 from lib.ProcessEmbeddings import WordEmbeddings
-from lib.MLPClassifier import MLPClassifier, add_features, WE, vector_dict
+from lib.MLPClassifier import MLPClassifier, add_features, WE
 
 vocab, id2tok, tok2id = get_vocab(train_dataset)
 vector_dict = WE.get_vector_dict()
@@ -31,13 +32,13 @@ Final evaluation of models on test set.
 """
 
 
-def evaluate_best_model(pool_across_models=False):
-    best_label_scores = defaultdict(int)
-    best_label_paths = defaultdict(str)
-    best_label_feat_info = defaultdict(list)
-    dropout_info = defaultdict(float)
-    for model_dir in glob.glob("models/mlp/*"):
-        print(model_dir)
+best_label_scores = defaultdict(int)
+best_label_paths = defaultdict(str)
+best_label_feat_info = defaultdict(list)
+dropout_info = defaultdict(float)
+for model_dir in glob.glob("models/mlp/*"):
+    print(model_dir)
+    if os.path.exists(f"{model_dir}/summary.txt"):
         with open(f"{model_dir}/summary.txt", "r") as f:
             text = f.read()
             for match in re.finditer(r"\d: \d\.\d+", text):
@@ -56,26 +57,26 @@ def evaluate_best_model(pool_across_models=False):
                         dropout_info[label] = float(
                             re.search(r"(?<=DROPOUT: )\d\.\d", text).group()
                         )
-    for label_ix in best_label_scores:
-        model = MLPClassifier(
-            302 if label_ix in best_label_feat_info[label_ix] else 300,
-            32,
-            dropout_info[label_ix],
-        )
-        model.load_state_dict(torch.load(best_label_paths[label_ix]))
-        model.eval()
-        preds = []
-        actual = []
-        for batch, targets, lengths, raw_data in create_dataset(
-            test_dataset, id2tok, tok2id, IX_TO_LABEL[label_ix], batch_size=BATCH_SIZE
-        ):
-            tokenized = tokenized_sentence(raw_data[0])
-            vector = torch.tensor(WE.get_sentence_vector(tokenized, vector_dict))
-            if label_ix in best_label_feat_info[label_ix]:
-                vector = add_features(vector, raw_data[0], FEAT_ADD_SOFTENER=0.3)
-            preds.append(int(model(vector.type(torch.FloatTensor)) > 0.4))
-            actual.append(targets.item())
-        print(IX_TO_LABEL[label_ix])
-        print(classification_report(actual, preds))
-        print(confusion_matrix(actual, preds))
-        print()
+for label_ix in best_label_scores:
+    model = MLPClassifier(
+        302 if label_ix in best_label_feat_info[label_ix] else 300,
+        32,
+        dropout_info[label_ix],
+    )
+    model.load_state_dict(torch.load(best_label_paths[label_ix]))
+    model.eval()
+    preds = []
+    actual = []
+    for batch, targets, lengths, raw_data in create_dataset(
+        test_dataset, id2tok, tok2id, IX_TO_LABEL[label_ix], batch_size=BATCH_SIZE
+    ):
+        tokenized = tokenized_sentence(raw_data[0])
+        vector = torch.tensor(WE.get_sentence_vector(tokenized, vector_dict))
+        if label_ix in best_label_feat_info[label_ix]:
+            vector = add_features(vector, raw_data[0], FEAT_ADD_SOFTENER=0.3)
+        preds.append(int(model(vector.type(torch.FloatTensor)) > 0.4))
+        actual.append(targets.item())
+    print(IX_TO_LABEL[label_ix])
+    print(classification_report(actual, preds))
+    print(confusion_matrix(actual, preds))
+    print()
